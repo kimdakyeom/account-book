@@ -8,3 +8,7 @@ class Book(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="book_user"
     )
+
+class Url(models.Model):
+    long_url = models.CharField(max_length=300)
+    short_url = models.CharField(max_length=200)

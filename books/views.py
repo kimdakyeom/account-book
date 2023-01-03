@@ -7,6 +7,7 @@ from .serializers import *
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsOwnerOrReadOnly
+import pyshorteners as ps
 
 class AccountBooklist(APIView):
     permissions_classes = [IsAuthenticated, IsOwnerOrReadOnly]
@@ -61,3 +62,15 @@ class AccountBookDetail(APIView):
         if book.user == request.user:
             book.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+# 단축 url 생성
+class ShortUrl(APIView):
+    def post(self, request, pk, format=None):
+        serializer = UrlSerializer(data=request.data)
+        if serializer.is_valid():
+            link = serializer.validated_data["long_url"]
+            sh = ps.Shortener()
+            short_url = (sh.tinyurl.short(link))
+            serializer.validated_data["short_url"] = short_url
+            serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
