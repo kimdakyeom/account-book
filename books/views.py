@@ -6,11 +6,12 @@ from rest_framework.response import Response
 from .serializers import *
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .permissions import IsOwnerOrReadOnly
 import pyshorteners as ps
 
 class AccountBooklist(APIView):
-    permissions_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    # 로그인한 유저만 가계부에 접근 가능
+    permissions_classes = [IsAuthenticated]
+
     # 가계부 리스트
     def get(self, request):
         user = User.objects.get(pk=request.user.pk)
@@ -21,7 +22,8 @@ class AccountBooklist(APIView):
         serializer = BookSerializer(my_books, many=True)
         return Response(serializer.data)
 
-    # 새로운 가계부를 작성
+
+    # 새로운 가계부 작성
     def post(self, request):
         serializer = BookSerializer(data=request.data)
         if serializer.is_valid():  # 유효성 검사
@@ -31,22 +33,29 @@ class AccountBooklist(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class AccountBookDetail(APIView):
-    permissions_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    # 로그인한 유저만 가계부에 접근 가능
+    permissions_classes = [IsAuthenticated]
     # 가계부 세부 내역
     def get(self, request, pk, format=None):
         book = Book.objects.get(pk=pk)
         if book.user == request.user:
             serializer = BookSerializer(book)
             return Response(serializer.data)
+        # 로그인 한 유저가 가계부의 유저가 아니면 400 에러 띄우기
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     # 가계부 세부 내역 복제
     def post(self, request, pk, format=None):
         book = Book.objects.get(pk=pk)
         serializer = BookSerializer(data={'id': book.id, 'user': book.user, 'price': book.price, 'memo': book.memo, 'note_at': book.note_at})
-        if serializer.is_valid():  # 유효성 검사
-            serializer.validated_data["user"] = request.user
-            serializer.save()
-            return Response('copy success!', status=status.HTTP_201_CREATED)
+        if book.user == request.user:
+            if serializer.is_valid():  # 유효성 검사
+                serializer.validated_data["user"] = request.user
+                serializer.save()
+                return Response('copy success!', status=status.HTTP_201_CREATED)
+            # 로그인 한 유저가 가계부의 유저가 아니면 400 에러 띄우기
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     # 가계부 수정
     def put(self, request, pk, format=None):
         book = Book.objects.get(pk=pk)
@@ -55,13 +64,17 @@ class AccountBookDetail(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # 로그인 한 유저가 가계부의 유저가 아니면 400 에러 띄우기
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     # 가계부 삭제
     def delete(self, request, pk, format=None):
         book = Book.objects.get(pk=pk)
         if book.user == request.user:
             book.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+        # 로그인 한 유저가 가계부의 유저가 아니면 400 에러 띄우기
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 # 단축 url 생성
 class ShortUrl(APIView):
