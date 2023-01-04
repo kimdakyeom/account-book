@@ -46,7 +46,7 @@ class AccountBookDetail(APIView):
         if serializer.is_valid():  # 유효성 검사
             serializer.validated_data["user"] = request.user
             serializer.save()
-            return Response('copy success!')
+            return Response('copy success!', status=status.HTTP_201_CREATED)
     # 가계부 수정
     def put(self, request, pk, format=None):
         book = Book.objects.get(pk=pk)
@@ -67,10 +67,20 @@ class AccountBookDetail(APIView):
 class ShortUrl(APIView):
     def post(self, request, pk, format=None):
         serializer = UrlSerializer(data=request.data)
+        urls = Url.objects.all()
+        url = []
+        for u in urls:
+            url.append(u.long_url)
         if serializer.is_valid():
             link = serializer.validated_data["long_url"]
-            sh = ps.Shortener()
-            short_url = (sh.tinyurl.short(link))
-            serializer.validated_data["short_url"] = short_url
-            serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # db에 저장 안되있으면 새로 생성해서 저장
+            if link not in url:
+                sh = ps.Shortener()
+                short_url = (sh.tinyurl.short(link))
+                serializer.validated_data["short_url"] = short_url
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # db에 저장 되어있으면 해당 데이터 보여주기
+            else:
+                url_data = Url.objects.get(long_url=link)
+                return Response({"long_url":link, "short_url":url_data.short_url})
