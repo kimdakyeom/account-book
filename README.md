@@ -1,7 +1,8 @@
 # 가계부 API
 ## 개요
 사용자의 소비내역을 기록/관리하는 가계부를 제공한다.
-## DDL 파일 다운로드
+## DDL 파일
+- [DDL 파일](https://github.com/kimdakyeom/account-book/blob/master/account_db.ddl)
 
 ## 사용한 외부 라이브러리
 - [django-rest-auth](https://django-rest-auth.readthedocs.io/en/latest/)
@@ -107,6 +108,8 @@
 |memo|String|관련 메모|
 |note_at|Date|작성 날짜|
 
+- 가계부 리스트에서 복제, 세부 내역 페이지에서 이루어지는지에 따라 이후 행동도 달라져서 어떻게 설계할지 고민했습니다. 수정/삭제 또한 세부 내역 페이지에서 가능하도록 설계했기 때문에 복제도 세부 내역 페이지에서 가능하도록 했습니다.
+
 #### 세부 내역 단축 URL
 #### URL
 > POST /books/<<int:pk>>/shortUrl
@@ -117,3 +120,8 @@
 |----|----|----|
 |long_url|String|현재 url|
 |short_url|String|단축된 url|
+
+- pyshorteners 라이브러리를 이용해서 tinyurl 서비스를 활용했습니다. 만료시간을 따로 설정하지 못해서 그 부분은 구현하지 못했습니다.
+
+<hr>
+- 로그인/회원가입 기능에 대한 테스트 케이스 작성을 완료했습니다.
